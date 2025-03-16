@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Serial Debugger</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        #chat {
+            border: 1px solid #ccc;
+            padding: 10px;
+            height: 400px;
+            overflow-y: auto;
+            background-color: #f9f9f9;
+        }
+        .bubble {
+            padding: 5px 10px;
+            border-radius: 10px;
+            margin: 5px;
+            max-width: 80%;
+            display: inline-block;
+            background-color: #FFD700; /* Yellow background */
+        }
+        .sent { text-align: right; }
+        .sent .bubble { float: right; clear: both; }
+        .received { text-align: left; }
+        .received .bubble { float: left; clear: both; }
+        .system { text-align: center; color: #555555; }
+        .timestamp { font-size: 0.8em; color: #888888; }
+        .controls { margin-top: 10px; }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
+</head>
+<body>
+    <h1>Serial Debugger</h1>
+    <div id="chat"></div>
+    <div class="controls">
+        <label for="port">Serial Port:</label>
+        <select id="port">
+            {% for port in ports %}
+                <option value="{{ port }}">{{ port }}</option>
+            {% endfor %}
+        </select>
+        <label for="baud">Baud Rate:</label>
+        <input type="number" id="baud" value="115200">
+        <button id="openBtn" onclick="openPort()">Open Port</button>
+        <button id="closeBtn" onclick="closePort()" disabled>Close Port</button>
+        <button id="clearBtn" onclick="clearHistory()">Clear History</button>
+        <br>
+        <input type="text" id="message" placeholder="Type message here..." style="width: 300px;">
+        <button onclick="sendMessage()">Send</button>
+    </div>
+
+    <script>
+        const socket = io();
+        const chat = document.getElementById('chat');
+        const openBtn = document.getElementById('openBtn');
+        const closeBtn = document.getElementById('closeBtn');
+        const clearBtn = document.getElementById('clearBtn');
+
+        socket.on('connect', function() {
+            console.log("Connected to server");
+        });
+
+        socket.on('log', function(data) {
+            const div = document.createElement('div');
+            div.className = data.type;
+            if (data.type === 'sent' || data.type === 'received') {
+                div.innerHTML = `<div class="bubble">${data.message}</div>`;
+            } else {
+                div.innerHTML = data.message;
+            }
+            chat.appendChild(div);
+            chat.scrollTop = chat.scrollHeight;
+        });
+
+        socket.on('ports', function(ports) {
+            const portSelect = document.getElementById('port');
+            portSelect.innerHTML = ports.map(p => `<option value="${p}">${p}</option>`).join('');
+        });
+
+        socket.on('port_state', function(data) {
+            console.log("Port state updated:", data.is_open);
+            openBtn.disabled = data.is_open;
+            closeBtn.disabled = !data.is_open;
+        });
+
+        function openPort() {
+            const port = document.getElementById('port').value;
+            const baud = document.getElementById('baud').value;
+            socket.emit('open_port', { port: port, baud: baud });
+        }
+
+        function closePort() {
+            socket.emit('close_port');
+        }
+
+        function sendMessage() {
+            const message = document.getElementById('message').value;
+            if (message) {
+                socket.emit('send_data', { message: message });
+                document.getElementById('message').value = '';
+            }
+        }
+
+        function clearHistory() {
+            chat.innerHTML = '';  // Clear all content in the chat div
+            socket.emit('clear_history');  // Optional: Notify server
+        }
+
+        document.getElementById('message').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') sendMessage();
+        });
+    </script>
+</body>
+</html>
