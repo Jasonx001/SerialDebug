@@ -47,7 +47,7 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-
+AHT20State CurrAHT20State = INIT;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -102,10 +102,26 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  AHT20_Read(&temperature, &humidity);
-	  sprintf(message, "Temperature: %.1f C, Humidity: %.1f %%\r\n", temperature, humidity);
-	  HAL_UART_Transmit(&huart2, (uint8_t *)message, strlen(message), HAL_MAX_DELAY);
-	  HAL_Delay(1000);
+	  // Read the state of AHT20 and send it through serial port
+	  if (CurrAHT20State == INIT)
+	  {
+		  AHT20_CMD_Meas(); // send the command to start measurement
+	  }
+	  else if (CurrAHT20State == SENDFINISHED)
+	  {
+		  HAL_Delay(75);
+		  AHT20_GetHT_VAL(); // read the measurement into data buffer
+	  }
+	  else if (CurrAHT20State == READFINISHED)
+	  {
+		  AHT20_PARSE_VAL(&temperature, &humidity);
+		  sprintf(message, "Temperature: %.1f C, Humidity: %.1f %%\r\n", temperature, humidity);
+		  HAL_UART_Transmit(&huart2, (uint8_t *)message, strlen(message), HAL_MAX_DELAY);
+		  HAL_Delay(1000);
+		  CurrAHT20State = INIT;
+	  }
+	  //AHT20_Read(&temperature, &humidity);
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

@@ -36,7 +36,15 @@ extern "C" {
 
 /* Exported types ------------------------------------------------------------*/
 /* USER CODE BEGIN ET */
+typedef enum {
+	INIT,
+	SENDING,
+	SENDFINISHED,
+	READING,
+	READFINISHED,
+}AHT20State;
 
+extern AHT20State CurrAHT20State;
 /* USER CODE END ET */
 
 /* Exported constants --------------------------------------------------------*/
