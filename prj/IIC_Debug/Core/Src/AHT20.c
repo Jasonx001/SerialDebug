@@ -43,14 +43,14 @@ void AHT20_Init()
 void AHT20_CMD_Meas()
 {
 	uint8_t txCmd[3] = { 0xAC, 0x033, 0x00 };
-	HAL_I2C_Master_Transmit_IT(&hi2c1, ATH20_ADDRESS, txCmd, 3);
+	HAL_I2C_Master_Transmit_DMA(&hi2c1, ATH20_ADDRESS, txCmd, 3);
 }
 
 /* Func name: AHT20_GetHT_VAL()
  * Description: Get the temperature values from the sensor AHT20 */
 void AHT20_GetHT_VAL()
 {
-	HAL_I2C_Master_Receive_IT(&hi2c1, ATH20_ADDRESS, rdBuffer, AHT20_RxBurrferSize);
+	HAL_I2C_Master_Receive_DMA(&hi2c1, ATH20_ADDRESS, rdBuffer, AHT20_RxBurrferSize);
 }
 
 /* Func name: AHT20_PARSE_VAL()
